@@ -62,6 +62,13 @@ class DIAYNAgent(DDPGAgent):
         meta['skill'] = skill
         return meta
 
+    def select_meta(self, meta):
+        skill = np.zeros(self.skill_dim, dtype=np.float32)
+        skill[meta] = 1.0
+        meta = OrderedDict()
+        meta['skill'] = skill
+        return meta
+
     def update_meta(self, meta, global_step, time_step):
         if global_step % self.update_skill_every_step == 0:
             return self.init_meta()
