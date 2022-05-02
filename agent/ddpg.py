@@ -35,10 +35,10 @@ class Actor(nn.Module):
     def __init__(self, obs_type, obs_dim, action_dim, feature_dim, hidden_dim):
         super().__init__()
 
-        feature_dim = feature_dim if obs_type == 'pixels' else hidden_dim
+        feature_dim = feature_dim if obs_type == 'pixels' else hidden_dim  # obs_type=state 면 feature_dim=1024
 
         self.trunk = nn.Sequential(nn.Linear(obs_dim, feature_dim),
-                                   nn.LayerNorm(feature_dim), nn.Tanh())
+                                   nn.LayerNorm(feature_dim), nn.Tanh())  # (40, 1024)
 
         policy_layers = []
         policy_layers += [
@@ -51,7 +51,7 @@ class Actor(nn.Module):
                 nn.Linear(hidden_dim, hidden_dim),
                 nn.ReLU(inplace=True)
             ]
-        policy_layers += [nn.Linear(hidden_dim, action_dim)]
+        policy_layers += [nn.Linear(hidden_dim, action_dim)]  # (1024, 6)
 
         self.policy = nn.Sequential(*policy_layers)
 
@@ -82,9 +82,9 @@ class Critic(nn.Module):
         else:
             # for states actions come in the beginning
             self.trunk = nn.Sequential(
-                nn.Linear(obs_dim + action_dim, hidden_dim),
+                nn.Linear(obs_dim + action_dim, hidden_dim),  # (24+6, 1024)
                 nn.LayerNorm(hidden_dim), nn.Tanh())
-            trunk_dim = hidden_dim
+            trunk_dim = hidden_dim  # (1024)
 
         def make_q():
             q_layers = []
@@ -108,10 +108,10 @@ class Critic(nn.Module):
     def forward(self, obs, action):
         inpt = obs if self.obs_type == 'pixels' else torch.cat([obs, action],
                                                                dim=-1)
-        h = self.trunk(inpt)
+        h = self.trunk(inpt)  # (1024,1024)
         h = torch.cat([h, action], dim=-1) if self.obs_type == 'pixels' else h
 
-        q1 = self.Q1(h)
+        q1 = self.Q1(h)  # (1024, 1)
         q2 = self.Q2(h)
 
         return q1, q2
@@ -177,7 +177,7 @@ class DDPGAgent:
         self.critic_target.load_state_dict(self.critic.state_dict())
 
         # optimizers
-
+        
         if obs_type == 'pixels':
             self.encoder_opt = torch.optim.Adam(self.encoder.parameters(),
                                                 lr=lr)
@@ -215,7 +215,7 @@ class DDPGAgent:
         obs = torch.as_tensor(obs, device=self.device).unsqueeze(0)
         h = self.encoder(obs)
         inputs = [h]
-        for value in meta.values():
+        for value in meta.values():  # skill
             value = torch.as_tensor(value, device=self.device).unsqueeze(0)
             inputs.append(value)
         inpt = torch.cat(inputs, dim=-1)
@@ -275,6 +275,7 @@ class DDPGAgent:
         # optimize actor
         self.actor_opt.zero_grad(set_to_none=True)
         actor_loss.backward()
+        # actor_loss.backward(retain_graph=True)
         self.actor_opt.step()
 
         if self.use_tb or self.use_wandb:

@@ -1,5 +1,6 @@
 defaults:
   - agent: ddpg
+  # - agent: icm
   - override hydra/launcher: submitit_local
 
 # mode
@@ -18,7 +19,10 @@ eval_every_frames: 10000
 num_eval_episodes: 10
 # pretrained
 snapshot_ts: 100000
-snapshot_base_dir: ./pretrained_models
+# snapshot_base_dir: ./pretrained_models
+# snapshot_base_dir: ./models
+snapshot_base_dir: ../../../models
+snapshot_dir: ../../../models/states/walker/diayn/
 # replay buffer
 replay_buffer_size: 1000000
 replay_buffer_num_workers: 4
@@ -32,13 +36,14 @@ save_video: true
 save_train_video: false
 use_tb: false
 use_wandb: false
+meta: false
 # experiment
 experiment: exp
 
 
 hydra:
   run:
-    dir: ./exp_local/${now:%Y.%m.%d}/${now:%H%M%S}_${agent.name}
+    dir: ./exp_local/${now:%Y.%m.%d}/${now:%H%M%S}_${agent.name}_${experiment}
   sweep:
     dir: ./exp_sweep/${now:%Y.%m.%d}/${now:%H%M}_${agent.name}_${experiment}
     subdir: ${hydra.job.num}
