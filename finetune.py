@@ -187,9 +187,9 @@ class Workspace:
                                 self.global_frame)
                 self.eval()
 
-            meta = self.agent.update_meta(meta, self.global_step, time_step)
+            # meta = self.agent.update_meta(meta, self.global_step, time_step)
 
-            if hasattr(self.agent, "regress_meta"):
+            if hasattr(self.agent, "regress_meta"):  # aps 라는 알고리즘이 사용
                 repeat = self.cfg.action_repeat
                 every = self.agent.update_task_every_step // repeat
                 init_step = self.agent.num_init_steps
