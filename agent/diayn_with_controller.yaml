@@ -1,6 +1,6 @@
 # @package agent
-_target_: agent.diayn.DIAYNAgent
-name: diayn
+_target_: agent.diayn_with_controller.DIAYNwithController
+name: diayn_with_controller
 reward_free: ${reward_free}
 obs_type: ??? # to be specified later
 obs_shape: ??? # to be specified later
