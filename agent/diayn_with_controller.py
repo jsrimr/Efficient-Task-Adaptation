@@ -128,7 +128,8 @@ class DIAYNwithController(DDPGAgent):
         skill_used = obs[:, -self.skill_dim:].argmax(dim=1)
         skill_dist.log_prob(torch.tensor(1, device="cuda:0")).shape
         # loss = - Q.mean().detach() * skill_pred.gather(1, skill_used.unsqueeze(0)).log_prob()
-        loss = (-Q.detach() * skill_dist.log_prob(skill_used).unsqueeze(1)).mean()
+        advantage = (Q - Q.mean(dim=1)).detach()
+        loss = -(advantage * skill_dist.log_prob(skill_used).unsqueeze(1)).mean()
 
         self.diayn_opt.zero_grad()
         if self.encoder_opt is not None:
