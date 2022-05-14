@@ -6,9 +6,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dm_env import specs
-
 import utils
+from dm_env import specs
+from torch.distributions import Categorical
+
 from agent.ddpg import DDPGAgent
 
 
@@ -37,6 +38,7 @@ class DIAYNwithController(DDPGAgent):
         self.update_encoder = update_encoder
         # increase obs shape to include skill dim
         kwargs["meta_dim"] = self.skill_dim
+        self.current_meta = None
 
         # create actor and critic
         super().__init__(**kwargs)
@@ -44,6 +46,7 @@ class DIAYNwithController(DDPGAgent):
         # create diayn
         self.diayn = DIAYN(self.obs_dim - self.skill_dim, self.skill_dim,
                            kwargs['hidden_dim']).to(kwargs['device'])
+        self.softmax = nn.Softmax(dim=1)
 
         # optimizers
         self.diayn_opt = torch.optim.Adam(self.diayn.parameters(), lr=self.lr)
@@ -51,17 +54,22 @@ class DIAYNwithController(DDPGAgent):
         self.diayn.train()
 
     def act(self, obs, meta, step, eval_mode):
-
+        """
+        meta from passed parameter is useless
+        """
         with torch.no_grad():
             obs = torch.as_tensor(obs, device=self.device).unsqueeze(0)
             h = self.encoder(obs)
             x = self.diayn(obs)  # (B, skill_dim)
-            promising_skills = torch.argmax(x, dim=1) # (B,)
-            meta = torch.zeros_like(x).scatter_(1, promising_skills.unsqueeze(1), 1.)
+            skill_dist = Categorical(self.softmax(x))
+            skill = skill_dist.sample()  # Or, skill = torch.argmax(x, dim=1) # (B,1)
+            meta = torch.zeros(self.skill_dim, device=self.device)
+            meta[skill] = 1.0
+            self.current_meta = meta
 
-            inpt = torch.cat([h, meta], dim=-1)
-            #assert obs.shape[-1] == self.obs_shape[-1]
-            stddev = utils.schedule(self.stddev_schedule, step)
+        inpt = torch.cat([h, meta.unsqueeze(0)], dim=-1)
+        #assert obs.shape[-1] == self.obs_shape[-1]
+        stddev = utils.schedule(self.stddev_schedule, step)
 
         dist = self.actor(inpt, stddev)
         if eval_mode:
@@ -71,7 +79,7 @@ class DIAYNwithController(DDPGAgent):
             if step < self.num_expl_steps:
                 action.uniform_(-1.0, 1.0)
 
-        return action.cpu().numpy()[0], promising_skills
+        return action.cpu().numpy()[0]
 
     def init_from(self, other):
         # copy parameters over
@@ -84,6 +92,10 @@ class DIAYNwithController(DDPGAgent):
     def get_meta_specs(self):
         return (specs.Array((self.skill_dim,), np.float32, 'skill'),)
 
+    def get_current_meta(self):
+        meta = OrderedDict()
+        meta['skill'] = self.current_meta.cpu().numpy()
+        return meta
 
     def update_actor_and_controller(self, obs, step):
         metrics = dict()
@@ -109,9 +121,14 @@ class DIAYNwithController(DDPGAgent):
             metrics['actor_ent'] = dist.entropy().sum(dim=-1).mean().item()
 
         # update controller
-        skill_pred = self.diayn(obs[:, :-self.skill_dim])
-        actual_skill = obs[:, -self.skill_dim:].argmax(dim=1)
-        loss = - Q.mean().detach() * skill_pred.gather(1, actual_skill)
+
+        skill_prob = self.softmax(self.diayn(obs[:, :-self.skill_dim]))
+        skill_dist = Categorical(skill_prob)
+
+        skill_used = obs[:, -self.skill_dim:].argmax(dim=1)
+        skill_dist.log_prob(torch.tensor(1, device="cuda:0")).shape
+        # loss = - Q.mean().detach() * skill_pred.gather(1, skill_used.unsqueeze(0)).log_prob()
+        loss = (-Q.detach() * skill_dist.log_prob(skill_used).unsqueeze(1)).mean()
 
         self.diayn_opt.zero_grad()
         if self.encoder_opt is not None:
@@ -125,7 +142,6 @@ class DIAYNwithController(DDPGAgent):
             metrics['diayn_loss'] = loss.item()
 
         return metrics
-
 
     def update(self, replay_iter, step):
         """
@@ -167,7 +183,6 @@ class DIAYNwithController(DDPGAgent):
 
         # update actor and controller
         metrics.update(self.update_actor_and_controller(obs.detach(), step))
-
 
         # update critic target
         utils.soft_update_params(self.critic, self.critic_target,

@@ -205,6 +205,9 @@ class Workspace:
                                         self.global_step,
                                         eval_mode=False)
 
+            if hasattr(self.agent, "get_current_meta"):  # skill_controller 라는 알고리즘이 사용
+                meta = self.agent.get_current_meta()
+
             # try to update the agent
             if not seed_until_step(self.global_step):
                 metrics = self.agent.update(self.replay_iter, self.global_step)
