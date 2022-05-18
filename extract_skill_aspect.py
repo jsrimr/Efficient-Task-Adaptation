@@ -150,7 +150,7 @@ class Workspace:
 
         episode_step, episode_reward = 0, 0
         time_step = self.train_env.reset()
-        meta = self.agent.init_meta()
+        meta = self.agent.select_meta(cfg.meta)
         self.replay_storage.add(time_step, meta)
         self.train_video_recorder.init(time_step.observation)
         metrics = None
@@ -175,7 +175,6 @@ class Workspace:
 
                 # reset env
                 time_step = self.train_env.reset()
-                meta = self.agent.init_meta()
                 self.replay_storage.add(time_step, meta)
                 self.train_video_recorder.init(time_step.observation)
 
@@ -187,8 +186,6 @@ class Workspace:
                 self.logger.log('eval_total_time', self.timer.total_time(),
                                 self.global_frame)
                 self.eval()
-
-            meta = self.agent.update_meta(meta, self.global_step, time_step)
 
             if hasattr(self.agent, "regress_meta"):  # aps 만 사용하는 코드
                 repeat = self.cfg.action_repeat
