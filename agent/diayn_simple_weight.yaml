@@ -1,6 +1,6 @@
 # @package agent
 _target_: agent.diayn_simple_weight.DIAYNasWeightPredictorAgent
-name: diayn_as_importance_predictor
+name: diayn_simple_weight
 reward_free: ${reward_free}
 obs_type: ??? # to be specified later
 obs_shape: ??? # to be specified later

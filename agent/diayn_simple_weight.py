@@ -87,7 +87,8 @@ class DIAYNasWeightPredictorAgent(DDPGAgent):
                                next_obs.detach(), step))
 
         # update actor
-        metrics.update(self.update_actor(obs.detach(), step))
+        # metrics.update(self.update_actor(obs.detach(), step))
+        metrics.update(self.update_actor(obs, step))
 
         # update critic target
         utils.soft_update_params(self.critic, self.critic_target,
