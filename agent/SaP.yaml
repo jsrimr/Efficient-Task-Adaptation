@@ -1,6 +1,6 @@
 # @package agent
-_target_: agent.diayn_as_importance_predictor.DIAYNasWeightPredictorAgent
-name: diayn_as_importance_predictor
+_target_: agent.SaP.SkillasPerspectiveAgent
+name: SaP
 reward_free: ${reward_free}
 obs_type: ??? # to be specified later
 obs_shape: ??? # to be specified later

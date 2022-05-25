@@ -28,7 +28,7 @@ class DIAYN(nn.Module):
 
 
 
-class DIAYNasWeightPredictorAgent(DDPGAgent):
+class SkillasPerspectiveAgent(DDPGAgent):
     def __init__(self, update_skill_every_step, skill_dim, diayn_scale,
                  update_encoder, **kwargs):
         self.skill_dim = skill_dim
@@ -44,8 +44,6 @@ class DIAYNasWeightPredictorAgent(DDPGAgent):
         self.diayn = DIAYN(self.obs_dim - self.skill_dim, self.skill_dim,
                            kwargs['hidden_dim']).to(kwargs['device'])
         self.diayn.train()
-        
-
         self.actor_opt = torch.optim.Adam(list(self.actor.parameters()) + list(self.diayn.parameters()), lr=self.lr)
     
 
@@ -60,7 +58,7 @@ class DIAYNasWeightPredictorAgent(DDPGAgent):
         obs, action, extr_reward, discount, next_obs = utils.to_torch(
             batch, self.device)
 
-        # augment and encode : state 일 땐 aug_and_encode 의미없음
+        # augment and encode : aug_and_encode has no meaning when using 'state' type
         obs = self.aug_and_encode(obs)
         next_obs = self.aug_and_encode(next_obs)
 
@@ -103,7 +101,6 @@ class DIAYNasWeightPredictorAgent(DDPGAgent):
         skill_list = torch.eye(self.skill_dim, device=self.device).unsqueeze(0)  # (1, skill_dim, skill_dim)
         skill_list = skill_list.repeat(obs.shape[0], 1, 1)  # (B, skill_dim, skill_dim)
         state_with_skill = torch.cat([obs, skill_list], dim=-1)  # (B, skill_dim, skill_dim + obs_dim)
-
 
         processed = state_with_skill * skill_weight.permute(0,2,1)  # (B, skill_dim, skill_dim + obs_dim)
 

@@ -36,10 +36,10 @@ save_video: true
 save_train_video: false
 use_tb: false
 use_wandb: false
-meta: false
 # experiment
 experiment: exp
-
+# load DIAYN as skill controller
+init_diayn: true
 
 hydra:
   run:
