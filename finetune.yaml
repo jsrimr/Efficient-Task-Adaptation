@@ -34,7 +34,8 @@ use_tb: false
 use_wandb: false
 # experiment
 experiment: exp
-
+# load DIAYN as skill controller
+init_diayn: true
 
 hydra:
   run:
