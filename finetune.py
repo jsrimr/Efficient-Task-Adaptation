@@ -138,6 +138,15 @@ class Workspace:
             log('episode', self.global_episode)
             log('step', self.global_step)
 
+    def save_snapshot(self):
+        snapshot_dir = self.work_dir / "snapshot"
+        snapshot_dir.mkdir(exist_ok=True, parents=True)
+        snapshot = snapshot_dir / f'snapshot_{self.global_frame}.pt'
+        keys_to_save = ['agent', '_global_step', '_global_episode']
+        payload = {k: self.__dict__[k] for k in keys_to_save}
+        with snapshot.open('wb') as f:
+            torch.save(payload, f)
+
     def train(self):
         # predicates
         train_until_step = utils.Until(self.cfg.num_train_frames,
@@ -157,6 +166,7 @@ class Workspace:
             if time_step.last():
                 self._global_episode += 1
                 self.train_video_recorder.save(f'{self.global_frame}.mp4')
+                
                 # wait until all the metrics schema is populated
                 if metrics is not None:
                     # log stats
@@ -177,6 +187,7 @@ class Workspace:
                 meta = self.agent.init_meta()
                 self.replay_storage.add(time_step, meta)
                 self.train_video_recorder.init(time_step.observation)
+                    
 
                 episode_step = 0
                 episode_reward = 0
@@ -186,6 +197,8 @@ class Workspace:
                 self.logger.log('eval_total_time', self.timer.total_time(),
                                 self.global_frame)
                 self.eval()
+                # save_snapshot
+                self.save_snapshot()
 
             meta = self.agent.update_meta(meta, self.global_step, time_step)
 
@@ -220,7 +233,7 @@ class Workspace:
 
     def load_snapshot(self):
         # snapshot_base_dir = Path(self.cfg.snapshot_base_dir)
-        domain, _ = self.cfg.task.split('_', 1)
+        # domain, _ = self.cfg.task.split('_', 1)
         # snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / self.cfg.agent.name
         snapshot_dir = Path(self.cfg.snapshot_dir)
 
@@ -243,7 +256,8 @@ class Workspace:
         #     payload = try_load(seed)
         #     if payload is not None:
         #         return payload
-        # return None
+        print(f"failed to load from {snapshot_dir}")
+        return None
 
 
 @hydra.main(config_path='.', config_name='finetune')

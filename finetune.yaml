@@ -1,5 +1,6 @@
 defaults:
   - agent: ddpg
+  # - agent: icm
   - override hydra/launcher: submitit_local
 
 # mode
@@ -40,7 +41,7 @@ init_diayn: true
 
 hydra:
   run:
-    dir: ./exp_local/${now:%Y.%m.%d}/${now:%H%M%S}_${agent.name}
+    dir: ./exp_local/${now:%Y.%m.%d}/${now:%H%M%S}_${agent.name}_${experiment}
   sweep:
     dir: ./exp_sweep/${now:%Y.%m.%d}/${now:%H%M}_${agent.name}_${experiment}
     subdir: ${hydra.job.num}

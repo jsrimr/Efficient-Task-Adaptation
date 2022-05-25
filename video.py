@@ -78,12 +78,22 @@ class TrainVideoRecorder:
         self.enabled = self.save_dir is not None and enabled
         self.record(obs)
 
-    def record(self, obs):
+    # def record(self, obs):
+    #     if self.enabled:
+    #         frame = cv2.resize(obs[-3:].transpose(1, 2, 0),
+    #                            dsize=(self.render_size, self.render_size),
+    #                            interpolation=cv2.INTER_CUBIC)
+    #         self.frames.append(frame)
+    def record(self, env):
         if self.enabled:
-            frame = cv2.resize(obs[-3:].transpose(1, 2, 0),
-                               dsize=(self.render_size, self.render_size),
-                               interpolation=cv2.INTER_CUBIC)
+            if hasattr(env, 'physics'):
+                frame = env.physics.render(height=self.render_size,
+                                           width=self.render_size,
+                                           camera_id=self.camera_id)
+            else:
+                frame = env.render()
             self.frames.append(frame)
+
 
     def log_to_wandb(self):
         frames = np.transpose(np.array(self.frames), (0, 3, 1, 2))
