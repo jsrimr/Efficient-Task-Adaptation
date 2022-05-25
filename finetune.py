@@ -219,9 +219,10 @@ class Workspace:
             self._global_step += 1
 
     def load_snapshot(self):
-        snapshot_base_dir = Path(self.cfg.snapshot_base_dir)
+        # snapshot_base_dir = Path(self.cfg.snapshot_base_dir)
         domain, _ = self.cfg.task.split('_', 1)
-        snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / self.cfg.agent.name
+        # snapshot_dir = snapshot_base_dir / self.cfg.obs_type / domain / self.cfg.agent.name
+        snapshot_dir = Path(self.cfg.snapshot_dir)
 
         def try_load(seed):
             snapshot = snapshot_dir / str(
@@ -237,12 +238,12 @@ class Workspace:
         if payload is not None:
             return payload
         # otherwise try random seed
-        while True:
-            seed = np.random.randint(1, 11)
-            payload = try_load(seed)
-            if payload is not None:
-                return payload
-        return None
+        # while True:
+        #     seed = np.random.randint(1, 11)
+        #     payload = try_load(seed)
+        #     if payload is not None:
+        #         return payload
+        # return None
 
 
 @hydra.main(config_path='.', config_name='finetune')
