@@ -1,6 +1,6 @@
 # Efficient Task Adaptation by Mixing Discovered Skills; 
 
-This repository implements agents introduced in 'Efficient Task Adaptation by Mixing Discovered Skills' paper.
+This repository implements agents introduced in [Efficient Task Adaptation by Mixing Discovered Skills](https://openreview.net/forum?id=zkG3N8uff3V) paper.
 
 Same importance agent : agents/diayn_same_weight.py
 Simple importance agent : agents/diayn_simple_weight.py
